@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
@@ -9,18 +10,51 @@ app.use(express.json());
 
 app.post("/api/chat", async (req, res) => {
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const question = req.body.message;
+
+    if (!question || typeof question !== "string" || !question.trim()) {
+      return res.status(400).json({
+        error: "اكتبي سؤالك أولًا"
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(
+      process.env.GEMINI_API_KEY
+    );
+
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash",
-      systemInstruction: "أنت ألين، معلمة ذكية تتحدث العربية وتشرح اللغة العربية والتربية الإسلامية والرياضيات والفيزياء بدقة وبأسلوب مبسط."
+      systemInstruction: `
+أنت ألين، معلمة ذكية ومساعدة تعليمية باللغة العربية.
+
+أجيبي عن أسئلة الطالبة مباشرة، ولا تكتفي بالترحيب.
+تخصصاتك:
+- اللغة العربية والنحو والبلاغة.
+- التربية الإسلامية، مع الحرص على صحة المعلومات الشرعية.
+- الرياضيات مع شرح خطوات الحل.
+- الفيزياء مع توضيح القوانين والتعويض والحساب.
+
+استخدمي لغة عربية بسيطة وواضحة.
+اجعلي الشرح مناسبًا لطالبة في المرحلة الثانوية.
+إذا كان السؤال مسألة، اشرحي الحل خطوة بخطوة.
+لا تعرضي قائمة المواد بدل الإجابة.
+إذا لم تعرفي الإجابة، صرّحي بذلك ولا تخترعي معلومات.
+      `
     });
 
-    const result = await model.generateContent(req.body.message);
-    res.json({ reply: result.response.text() });
+    const result = await model.generateContent(question);
+    const reply = result.response.text();
+
+    res.json({ reply });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "تعذر الاتصال بالذكاء الاصطناعي" });
+    console.error("AI Error:", error.message);
+
+    res.status(500).json({
+      error: "تعذر الاتصال بالذكاء الاصطناعي. حاولي مرة أخرى."
+    });
   }
 });
 
 app.listen(process.env.PORT || 3000);
+
