@@ -7,7 +7,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
-
+app.get("/", (req, res) => {
+  res.send("Aleen AI is running!");
+});
 app.post("/api/chat", async (req, res) => {
   try {
     const question = req.body.message;
