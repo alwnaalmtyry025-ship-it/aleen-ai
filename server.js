@@ -7,56 +7,68 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
 app.get("/", (req, res) => {
   res.send("Aleen AI is running!");
 });
+
 app.post("/api/chat", async (req, res) => {
   try {
-    const question = req.body.message;
+    const message = req.body?.message;
 
-    if (!question || typeof question !== "string" || !question.trim()) {
+    if (!message || !message.trim()) {
       return res.status(400).json({
-        error: "اكتبي سؤالك أولًا"
+        error: "اكتبي سؤالك أولاً"
       });
     }
 
-    const genAI = new GoogleGenerativeAI(
-      process.env.GEMINI_API_KEY
-    );
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({
+        error: "مفتاح الذكاء الاصطناعي غير مضبوط في الخادم"
+      });
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      systemInstruction: `
-أنت ألين، معلمة ذكية ومساعدة تعليمية باللغة العربية.
-
-أجيبي عن أسئلة الطالبة مباشرة، ولا تكتفي بالترحيب.
-تخصصاتك:
-- اللغة العربية والنحو والبلاغة.
-- التربية الإسلامية، مع الحرص على صحة المعلومات الشرعية.
-- الرياضيات مع شرح خطوات الحل.
-- الفيزياء مع توضيح القوانين والتعويض والحساب.
-
-استخدمي لغة عربية بسيطة وواضحة.
-اجعلي الشرح مناسبًا لطالبة في المرحلة الثانوية.
-إذا كان السؤال مسألة، اشرحي الحل خطوة بخطوة.
-لا تعرضي قائمة المواد بدل الإجابة.
-إذا لم تعرفي الإجابة، صرّحي بذلك ولا تخترعي معلومات.
-      `
+      model: "gemini-2.5-flash"
     });
 
-    const result = await model.generateContent(question);
+    const prompt = `
+أنت Aleen، مساعدة تعليمية ذكية تتحدث باللغة العربية.
+
+مهمتك:
+- الإجابة عن أسئلة اللغة العربية.
+- شرح مسائل الرياضيات خطوة بخطوة.
+- شرح الفيزياء والقوانين والأمثلة.
+- الإجابة عن أسئلة الدراسات الإسلامية باحترام ودقة.
+- تبسيط المعلومات للطالبات بأسلوب واضح وسهل.
+- إذا كان السؤال يحتاج خطوات، اشرحي الحل بالتدريج.
+- لا تختلقي إجابات إذا لم تكوني متأكدة.
+- لا تكتفي بالترحيب أو الردود العامة؛ أجيبي عن السؤال نفسه.
+
+سؤال الطالبة:
+${message}
+`;
+
+    const result = await model.generateContent(prompt);
     const reply = result.response.text();
 
-    res.json({ reply });
+    return res.json({ reply });
 
   } catch (error) {
-    console.error("AI Error:", error.message);
+    console.error("Aleen error:", error);
 
-    res.status(500).json({
-      error: "تعذر الاتصال بالذكاء الاصطناعي. حاولي مرة أخرى."
+    return res.status(500).json({
+      error: "حدث خطأ أثناء معالجة السؤال"
     });
   }
 });
 
-app.listen(process.env.PORT || 3000);
+const PORT = process.env.PORT || 3000;
 
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Aleen AI is running on port ${PORT}`);
+});
