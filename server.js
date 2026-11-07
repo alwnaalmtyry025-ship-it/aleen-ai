@@ -33,7 +33,7 @@ app.post("/api/chat", async (req, res) => {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
-      gemini-3.5-flash-lite
+      model: "gemini-3.5-flash-lite"
     });
 
     const prompt = `
@@ -72,3 +72,4 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Aleen AI is running on port ${PORT}`);
 });
+
